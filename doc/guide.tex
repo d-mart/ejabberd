@@ -772,7 +772,7 @@ To define a listener there are several syntax.
 \makesubsubsection{listened-port}{Port Number, IP Address and Transport Protocol}
 
 The port number defines which port to listen for incoming connections.
-It can be a Jabber/XMPP standard port 
+It can be a Jabber/XMPP standard port
 (see section \ref{firewall}) or any other valid port number.
 
 The IP address can be represented with a string
@@ -807,7 +807,7 @@ The available modules, their purpose and the options allowed by each one are:
     Handles c2s connections.\\
     Options: \texttt{access}, \texttt{certfile}, \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
-    \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
+    \texttt{starttls}, \texttt{starttls\_required}, \texttt{peer\_cert\_required}, \texttt{tls},
     \texttt{zlib}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
@@ -941,12 +941,14 @@ This is a detailed description of each option allowed by the listening modules:
     No unencrypted connections will be allowed.
     You should also set the \option{certfile} option.
     You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
+  \titem{peer\_cert\_required} \ind{options!peer\_cert\_required}This option specifies that the peer
+    must supply a valid certificate.  Setting \option{peer\_cert\_required} also sets \option{starttls\_required}.
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting.
     This was the traditional encryption method in the early Jabber software,
     commonly on port 5223 for client-to-server communications.
     But this method is nowadays deprecated and not recommended.
-    The preferable encryption method is STARTTLS on port 5222, as defined 
+    The preferable encryption method is STARTTLS on port 5222, as defined
     \footahref{http://xmpp.org/rfcs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
@@ -968,7 +970,7 @@ This is a detailed description of each option allowed by the listening modules:
 There are some additional global options that can be specified in the ejabberd configuration file (outside \term{listen}):
 \begin{description}
   \titem{\{s2s\_use\_starttls, false|optional|required|required\_trusted\}}
-  \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines if 
+  \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines if
   s2s connections don't use STARTTLS encryption; if STARTTLS can be used optionally;
   if STARTTLS is required to establish the connection;
   or if STARTTLS is required and the remote certificate must be valid and trusted.
@@ -1014,7 +1016,7 @@ There are some additional global options that can be specified in the ejabberd c
     The allowed values are integers and 'undefined'.
     Default value: 'undefined'.
   \titem{\{route\_subdomains, local|s2s\}}
-  Defines if ejabberd must route stanzas directed to subdomains locally (compliant with 
+  Defines if ejabberd must route stanzas directed to subdomains locally (compliant with
   \footahref{http://xmpp.org/rfcs/rfc3920.html\#rules.subdomain}{RFC 3920: XMPP Core}),
   or to foreign server using S2S (compliant with
   \footahref{http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09\#section-11.3}{RFC 3920 bis}).
@@ -1077,15 +1079,15 @@ In this example, the following configuration defines that:
 \item c2s connections are listened for on port 5222 (all IPv4 addresses) and
   on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
   for the user called `\term{bad}'.
-\item s2s connections are listened for on port 5269 (all IPv4 addresses) 
-  with STARTTLS for secured traffic strictly required, and the certificates are verified. 
+\item s2s connections are listened for on port 5269 (all IPv4 addresses)
+  with STARTTLS for secured traffic strictly required, and the certificates are verified.
   Incoming and outgoing connections of remote XMPP servers are denied,
   only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service
   in all the IPv4 addresses. Note
   that it is also possible to serve them on different ports. The second
   example in section~\ref{webadmin} shows how exactly this can be done.
-\item All users except for the administrators have a traffic of limit 
+\item All users except for the administrators have a traffic of limit
   1,000\,Bytes/second
 \item \ind{transports!AIM}The
   \footahref{http://www.ejabberd.im/pyaimt}{AIM transport}
@@ -1287,15 +1289,15 @@ There are also \footahref{http://www.ejabberd.im/extauth}{several example authen
 
 These are the specific options:
 \begin{description}
-  \titem{\{extauth\_program, PathToScript\}} 
+  \titem{\{extauth\_program, PathToScript\}}
   Indicate in this option the full path to the external authentication script.
   The script must be executable by ejabberd.
 
-  \titem{\{extauth\_instances, Integer\}} 
+  \titem{\{extauth\_instances, Integer\}}
   Indicate how many instances of the script to run simultaneously to serve authentication in the virtual host.
   The default value is the minimum number: 1.
 
-  \titem{\{extauth\_cache, false|CacheTimeInteger\}} 
+  \titem{\{extauth\_cache, false|CacheTimeInteger\}}
   The value \term{false} disables the caching feature, this is the default.
   The integer \term{0} (zero) enables caching for statistics, but doesn't use that cached information to authenticate users.
   If another integer value is set, caching is enabled both for statistics and for authentication:
@@ -1312,7 +1314,7 @@ and starts three instances of the script for each virtual host defined in ejabbe
 {auth_method, [external]}.
 {extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
 {extauth_cache, 600}.
-{extauth_instances, 3}. 
+{extauth_instances, 3}.
 \end{verbatim}
 
 
@@ -1689,10 +1691,10 @@ using ImageMagick's Convert program.
 
 The configurable options are:
 \begin{description}
-  \titem{\{captcha\_cmd, Path\}} 
+  \titem{\{captcha\_cmd, Path\}}
   Full path to a script that generates the image.
   The default value disables the feature: \term{undefined}
-  \titem{\{captcha\_host, ProtocolHostPort\}} 
+  \titem{\{captcha\_host, ProtocolHostPort\}}
   ProtocolHostPort is a string with the host, and optionally the Protocol and Port number.
   It must identify where ejabberd listens for CAPTCHA requests.
   The URL sent to the user is formed by: \term{Protocol://Host:Port/captcha/}
@@ -2409,7 +2411,7 @@ Example:
 
 \makesubsubsection{ldapauth}{Authentication}
 
-You can authenticate users against an LDAP directory. 
+You can authenticate users against an LDAP directory.
 Note that current LDAP implementation does not support SASL authentication.
 
 Available options are:
@@ -2418,11 +2420,11 @@ Available options are:
 \titem{\{ldap\_base, Base\}}\ind{options!ldap\_base}LDAP base directory which stores
   users accounts. This option is required.
   \titem{\{ldap\_uids, [ \{ldap\_uidattr\} | \{ldap\_uidattr, ldap\_uidattr\_format\}, ...]\}}\ind{options!ldap\_uids}
-  LDAP attribute which holds a list of attributes to use as alternatives for getting the JID. 
+  LDAP attribute which holds a list of attributes to use as alternatives for getting the JID.
   The default attributes are \term{[\{"uid", "\%u"\}]}.
   The attributes are of the form:
   \term{[\{ldap\_uidattr\}]} or \term{[\{ldap\_uidattr, ldap\_uidattr\_format\}]}.
-  You can use as many comma separated attributes as needed. 
+  You can use as many comma separated attributes as needed.
   The values for \term{ldap\_uidattr} and
   \term{ldap\_uidattr\_format} are described as follow:
   \begin{description}
@@ -2900,9 +2902,9 @@ Options:
 \titem{\{server\_info, [ \{Modules, Field, [Value, ...]\}, ... ]\}} \ind{options!server\_info}
   Specify additional information about the server,
   as described in Contact Addresses for XMPP Services (\xepref{0157}).
-  \term{Modules} can be the keyword `all', 
+  \term{Modules} can be the keyword `all',
   in which case the information is reported in all the services;
-  or a list of \ejabberd{} modules, 
+  or a list of \ejabberd{} modules,
   in which case the information is only specified for the services provided by those modules.
   Any arbitrary \term{Field} and \term{Value} can be specified, not only contact addresses.
 \end{description}
@@ -3006,7 +3008,7 @@ To use HTTP-Binding, enable the module:
 \end{verbatim}
 and add \verb|http_bind| in the HTTP service. For example:
 \begin{verbatim}
-{listen, 
+{listen,
  [
   ...
   {5280, ejabberd_http, [
@@ -3018,16 +3020,16 @@ and add \verb|http_bind| in the HTTP service. For example:
   ...
 ]}.
 \end{verbatim}
-With this configuration, the module will serve the requests sent to 
+With this configuration, the module will serve the requests sent to
 \verb|http://example.org:5280/http-bind/|
 Remember that this page is not designed to be used by web browsers,
 it is used by XMPP clients that support XMPP over Bosh.
 
-If you want to set the service in a different URI path or use a different module, 
-you can configure it manually using the option \verb|request_handlers|. 
+If you want to set the service in a different URI path or use a different module,
+you can configure it manually using the option \verb|request_handlers|.
 For example:
 \begin{verbatim}
-{listen, 
+{listen,
  [
   ...
   {5280, ejabberd_http, [
@@ -3087,7 +3089,7 @@ Options:
     Default value is `application/octet-stream'.
 \end{description}
 
-This example configuration will serve the files from 
+This example configuration will serve the files from
 the local directory \verb|/var/www|
 in the address \verb|http://example.org:5280/pub/archive/|.
 In this example a new content type \term{ogg} is defined,
@@ -3098,7 +3100,7 @@ To use this module you must enable it:
  [
   ...
   {mod_http_fileserver, [
-                         {docroot, "/var/www"}, 
+                         {docroot, "/var/www"},
                          {accesslog, "/var/log/ejabberd/access.log"},
                          {directory_indices, ["index.html", "main.htm"]},
                          {custom_headers, [{"X-Powered-By", "Erlang/OTP"},
@@ -3116,7 +3118,7 @@ To use this module you must enable it:
 \end{verbatim}
 And define it as a handler in the HTTP service:
 \begin{verbatim}
-{listen, 
+{listen,
  [
   ...
   {5280, ejabberd_http, [
@@ -3185,7 +3187,7 @@ Examples:
  ]}.
 \end{verbatim}
 \item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
-  Moreover, the transport is only accessible to two users 
+  Moreover, the transport is only accessible to two users
   of \term{example.org}, and any user of \term{example.com}:
 \begin{verbatim}
 {acl, paying_customers, {user, "customer1", "example.org"}}.
@@ -3345,7 +3347,7 @@ Module options:
   \titem{\{anonymous, true|false\}} The room is anonymous:
   occupants don't see the real JIDs of other occupants.
   Note that the room moderators can always see the real JIDs of the occupants.
-  \titem{\{captcha\_protected, false\}} 
+  \titem{\{captcha\_protected, false\}}
   When a user tries to join a room where he has no affiliation (not owner, admin or member),
   the room requires him to fill a CAPTCHA challenge (see section \ref{captcha})
   in order to accept her join in the room.
@@ -3623,7 +3625,7 @@ online again. Thus it is very similar to how email works. Note that
   When a user has too many offline messages, any new messages that he receive are discarded,
   and a resource-constraint error is returned to the sender.
   The default value is \term{max\_user\_offline\_messages}.
-  Then you can define an access rule with a syntax similar to 
+  Then you can define an access rule with a syntax similar to
   \term{max\_user\_sessions} (see \ref{configmaxsessions}).
 \end{description}
 
@@ -3787,7 +3789,7 @@ incoming connections. Default is~7777.
 \titem{\{hostname, HostName\}}\ind{options!hostname}Defines a hostname advertised
 by the service when establishing a session with clients. This is useful when
 you run the service behind a NAT. The default is the value of \term{ip} option.
-Examples: \term{"proxy.mydomain.org"}, \term{"200.150.100.50"}. Note that 
+Examples: \term{"proxy.mydomain.org"}, \term{"200.150.100.50"}. Note that
 not all clients understand domain names in stream negotiation,
 so you should think twice before setting domain name in this option.
 \titem{\{auth\_type, anonymous|plain\}}\ind{options!auth\_type}SOCKS5 authentication type.
@@ -3874,7 +3876,7 @@ Options:
   If using the "virtual" nodetree,
   you can only enable those node plugins:
   ["flat","pep"] or ["flat"];
-  any other plugins configuration will not work. 
+  any other plugins configuration will not work.
   Also, all nodes will have the defaut configuration,
   and this can not be changed.
   Using "virtual" nodetree requires to start from a clean database,
@@ -4021,7 +4023,7 @@ and allows to create accounts only to clients of the local network:
   ...
  ]}.
 \end{verbatim}
-\item 
+\item
   This configuration disables all In-Band Registration
   functionality: create, delete accounts and change password:
 \begin{verbatim}
@@ -4803,11 +4805,11 @@ consists of the following \modvcardldap{}-specific options:
   \term{Pattern} is a string which contains pattern variables
   \term{"\%u"}, \term{"\%d"} or \term{"\%s"}.
   \term{LDAPattributes} is the list containing LDAP attributes.
-  The pattern variables 
-  \term{"\%s"} will be sequentially replaced 
+  The pattern variables
+  \term{"\%s"} will be sequentially replaced
   with the values of LDAP attributes from \term{List\_of\_LDAP\_attributes},
-  \term{"\%u"} will be replaced with the user part of a JID, 
-  and \term{"\%d"} will be replaced with the domain part of a JID. 
+  \term{"\%u"} will be replaced with the user part of a JID,
+  and \term{"\%d"} will be replaced with the domain part of a JID.
   The default is:
 \begin{verbatim}
 [{"NICKNAME", "%u", []},
@@ -5018,7 +5020,7 @@ Options:
 
 \makesection{ejabberdctl}{\term{ejabberdctl}}
 
-With the \term{ejabberdctl} command line administration script 
+With the \term{ejabberdctl} command line administration script
 you can execute \term{ejabberdctl commands} (described in the next section, \ref{ectl-commands})
 and also many general \term{ejabberd commands} (described in section \ref{eja-commands}).
 This means you can start, stop and perform many other administrative tasks
@@ -5848,7 +5850,7 @@ For example, the default configuration is:
 
 The log files grow continually, so it is recommended to rotate them periodically.
 To rotate the log files, rename the files and then reopen them.
-The ejabberdctl command \term{reopen-log} 
+The ejabberdctl command \term{reopen-log}
 (please refer to section \ref{ectl-commands})
 reopens the log files,
 and also renames the old ones if you didn't rename them.

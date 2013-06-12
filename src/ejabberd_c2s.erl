@@ -234,16 +234,21 @@ init([{SockMod, Socket}, Opts]) ->
 		end,
     Zlib = lists:member(zlib, Opts),
     StartTLS = lists:member(starttls, Opts),
-    StartTLSRequired = lists:member(starttls_required,
-				    Opts),
+    StartTLSRequired = lists:member(starttls_required, Opts) orelse
+                       lists:member(peer_cert_required, Opts),
     TLSEnabled = lists:member(tls, Opts),
     TLS = StartTLS orelse
-	    StartTLSRequired orelse TLSEnabled,
-    TLSOpts1 = lists:filter(fun ({certfile, _}) -> true;
-				(_) -> false
-			    end,
-			    Opts),
-    TLSOpts = [verify_none | TLSOpts1],
+    StartTLSRequired orelse TLSEnabled,
+    TLSOpts1 = lists:filter(fun ({certfile, _})       -> true;
+                                (peer_cert_required)  -> true;
+                                (_)                   -> false
+                            end,
+                            Opts),
+    TLSOpts = case lists:member(peer_cert_required, TLSOpts1) of
+                                true -> TLSOpts1;
+                                _ -> [verify_none | TLSOpts1]
+              end,
+
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
@@ -309,7 +314,37 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			<<"1.0">> ->
 			    send_header(StateData, Server, <<"1.0">>, DefaultLang),
 			    case StateData#state.authenticated of
-				false ->
+                false ->
+                    CertStatus = case StateData#state.tls_enabled of
+                        true ->
+                            SocketData = StateData#state.socket,
+                            case (StateData#state.sockmod):get_peer_certificate(SocketData) of
+                                {ok, PeerCert} ->
+                                    case (StateData#state.sockmod):get_verify_result(SocketData) of
+                                        0 ->
+                                            ?INFO_MSG("Peer certificate verification succeeded~n", []),
+                                            pass;
+                                        VerifyResult ->
+                                            ?INFO_MSG("Peer certificate verification failed: ~p~n", [VerifyResult]),
+                                            case lists:member(peer_cert_required, StateData#state.tls_options) of
+                                                true ->
+                                                    % Client cert verification is required but failed
+                                                    {fail, VerifyResult, PeerCert};
+                                                _ ->
+                                                    pass
+                                            end
+                                    end;
+                                error ->
+                                    case lists:member(peer_cert_required, StateData#state.tls_options) of
+                                        true ->
+                                            {fail, <<"Unable to retrieve peer certificate">>, undefined};
+                                        _ ->
+                                            pass
+                                    end
+                            end;
+                        _ ->
+                            pass
+                    end,
 				    SASLState =
 					cyrsasl:server_new(
 					  <<"jabber">>, Server, <<"">>, [],
@@ -371,22 +406,37 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    false ->
 						[]
 					end,
-				    send_element(StateData,
-					    #xmlel{name = <<"stream:features">>,
-						   attrs = [],
-						   children =
-						    TLSFeature ++ CompressFeature ++
-						    [#xmlel{name = <<"mechanisms">>,
-							    attrs = [{<<"xmlns">>, ?NS_SASL}],
-							    children = Mechs}]
-						    ++
-						    ejabberd_hooks:run_fold(c2s_stream_features,
-							Server, [], [Server])}),
-				    fsm_next_state(wait_for_feature_request,
-					       StateData#state{
-						 server = Server,
-						 sasl_state = SASLState,
-						 lang = Lang});
+                    case CertStatus of
+                        {fail, Message, undefined} ->
+                            ?ERROR_MSG("Bad!", []),
+                            send_element(StateData, ?SERRT_POLICY_VIOLATION(<<"en">>, Message)),
+                            send_trailer(StateData),
+                            {stop, normal, StateData#state{authenticated = false, tls_enabled = false}};
+                        {fail, CertVerifyResult, Certificate} ->
+                            CertError = tls:get_cert_verify_string(CertVerifyResult, Certificate),
+                            %CertError = <<"You're Nasty">>,
+                            ?ERROR_MSG("Closing c2s connection, cert error: ~s", [CertError]),
+                            send_element(StateData, ?SERRT_POLICY_VIOLATION(<<"en">>, CertError)),
+                            send_trailer(StateData),
+                            {stop, normal, StateData#state{authenticated = false, tls_enabled = false}};
+                        _ ->
+                            send_element(StateData,
+                            #xmlel{name = <<"stream:features">>,
+                               attrs = [],
+                               children =
+                                TLSFeature ++ CompressFeature ++
+                                [#xmlel{name = <<"mechanisms">>,
+                                    attrs = [{<<"xmlns">>, ?NS_SASL}],
+                                    children = Mechs}]
+                                ++
+                                ejabberd_hooks:run_fold(c2s_stream_features,
+                                Server, [], [Server])}),
+                            fsm_next_state(wait_for_feature_request,
+                               StateData#state{
+                             server = Server,
+                             sasl_state = SASLState,
+                             lang = Lang})
+                    end;
 				_ ->
 				    case StateData#state.resource of
 				    <<"">> ->
